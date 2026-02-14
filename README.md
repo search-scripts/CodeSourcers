@@ -27,10 +27,11 @@ Cada pasta de ano contém subpastas com scripts específicos de diferentes jogos
 
 ### Método 1: Navegação Manual
 1. Acesse a pasta do ano desejado
-2. (ex: `2026/`)
-3. Nessa pasta vai aparacer todos os jogos dessa maneira: 
-4. Navegue pelas pastas de jogos disponíveis
-5. Encontre e baixe o script que você precisa
+2. (exemplo: `2026/`)
+3. Nessa pasta vai se organizar todos os jogos dessa maneira:
+4. ```Nome do jogo SCRIPT | nome do script.lua```
+5. Navegue pelas pastas de jogos disponíveis
+6. Encontre e baixe o script que você precisa
 
 ### Método 2: Busca no GitHub
 1. Use a barra de busca do GitHub (pressione `/` no repositório)
