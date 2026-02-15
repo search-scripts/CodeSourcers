@@ -1,0 +1,330 @@
+-- Script para botão arrastável com teleporte e órbita
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
+
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+-- Criar ScreenGui
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "TeleportOrbitGui"
+screenGui.ResetOnSpawn = false
+screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+screenGui.Parent = playerGui
+
+-- Criar botão
+local button = Instance.new("TextButton")
+button.Name = "OrbitButton"
+button.Size = UDim2.new(0, 80, 0, 80)
+button.Position = UDim2.new(0.85, 0, 0.7, 0)
+button.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+button.BorderSizePixel = 0
+button.Text = "🌀"
+button.TextSize = 40
+button.TextColor3 = Color3.fromRGB(255, 255, 255)
+button.Font = Enum.Font.GothamBold
+button.Parent = screenGui
+
+-- Arredondar cantos
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0.5, 0)
+corner.Parent = button
+
+-- Variáveis para arrastar
+local dragging = false
+local dragInput
+local dragStart
+local startPos
+local isOrbiting = false
+
+-- Funções de arrastar
+local function update(input)
+    local delta = input.Position - dragStart
+    button.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+end
+
+button.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = button.Position
+        
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
+end)
+
+button.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+        dragInput = input
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if input == dragInput and dragging then
+        update(input)
+    end
+end)
+
+-- Função para encontrar jogador mais próximo
+local function findNearestPlayer()
+    local character = player.Character
+    if not character or not character:FindFirstChild("HumanoidRootPart") then
+        return nil
+    end
+    
+    local myPos = character.HumanoidRootPart.Position
+    local nearestPlayer = nil
+    local shortestDistance = math.huge
+    
+    for _, otherPlayer in pairs(Players:GetPlayers()) do
+        if otherPlayer ~= player then
+            local otherCharacter = otherPlayer.Character
+            if otherCharacter and otherCharacter:FindFirstChild("HumanoidRootPart") then
+                local distance = (otherCharacter.HumanoidRootPart.Position - myPos).Magnitude
+                if distance < shortestDistance then
+                    shortestDistance = distance
+                    nearestPlayer = otherPlayer
+                end
+            end
+        end
+    end
+    
+    return nearestPlayer
+end
+
+-- Função de órbita
+local function orbitPlayer(targetPlayer)
+    if isOrbiting then return end
+    isOrbiting = true
+    
+    local character = player.Character
+    if not character or not character:FindFirstChild("HumanoidRootPart") then
+        isOrbiting = false
+        return
+    end
+    
+    local targetCharacter = targetPlayer.Character
+    if not targetCharacter or not targetCharacter:FindFirstChild("Humanoid") then
+        isOrbiting = false
+        return
+    end
+    
+    local targetHumanoid = targetCharacter.Humanoid
+    local targetRootPart = targetCharacter:FindFirstChild("HumanoidRootPart")
+    
+    if not targetRootPart then
+        isOrbiting = false
+        return
+    end
+    
+    -- Teleportar próximo ao jogador
+    local startAngle = 0
+    local orbitRadius = 3 -- 1 metro de distância
+    local orbitDuration = 2.5 -- 2.5 segundos
+    local startTime = tick()
+    
+    -- Calcular altura do humanoide
+    local humanoidHeight = targetHumanoid.HipHeight + 2
+    
+    -- Desabilitar colisão temporariamente
+    for _, part in pairs(character:GetDescendants()) do
+        if part:IsA("BasePart") then
+            part.CanCollide = false
+        end
+    end
+    
+    -- Loop de órbita
+    local connection
+    connection = RunService.Heartbeat:Connect(function()
+        local elapsedTime = tick() - startTime
+        
+        if elapsedTime >= orbitDuration or not targetRootPart.Parent then
+            connection:Disconnect()
+            isOrbiting = false
+            
+            -- Reabilitar colisão
+            for _, part in pairs(character:GetDescendants()) do
+                if part:IsA("BasePart") then
+                    part.CanCollide = true
+                end
+            end
+            
+            return
+        end
+        
+        -- Calcular ângulo atual (360 graus em 2.5 segundos)
+        local progress = elapsedTime / orbitDuration
+        local angle = startAngle + (math.pi * 2 * progress)
+        
+        -- Calcular nova posição em órbita
+        local offsetX = math.cos(angle) * orbitRadius
+        local offsetZ = math.sin(angle) * orbitRadius
+        
+        local targetPos = targetRootPart.Position
+        local newPosition = Vector3.new(
+            targetPos.X + offsetX,
+            targetPos.Y + humanoidHeight,
+            targetPos.Z + offsetZ
+        )
+        
+        -- Mover o jogador
+        if character:FindFirstChild("HumanoidRootPart") then
+            character.HumanoidRootPart.CFrame = CFrame.new(newPosition, targetPos)
+        end
+    end)
+end
+
+-- Evento de clique do botão
+button.MouseButton1Click:Connect(function()
+    if isOrbiting then
+        return
+    end
+    
+    local nearestPlayer = findNearestPlayer()
+    
+    if nearestPlayer then
+        -- Feedback visual
+        button.BackgroundColor3 = Color3.fromRGB(0, 255, 100)
+        wait(0.1)
+        button.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+        
+        -- Iniciar órbita
+        orbitPlayer(nearestPlayer)
+    else
+        -- Feedback de erro
+        button.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
+        wait(0.3)
+        button.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+    end
+end)
+
+
+-- Script para botão arrastável com teleporte para posição fixa
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+-- Criar ScreenGui
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "TeleportFixedGui"
+screenGui.ResetOnSpawn = false
+screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+screenGui.Parent = playerGui
+
+-- Criar botão
+local button = Instance.new("TextButton")
+button.Name = "TeleportButton"
+button.Size = UDim2.new(0, 80, 0, 80)
+button.Position = UDim2.new(0.85, 0, 0.55, 0) -- Posição diferente do outro botão
+button.BackgroundColor3 = Color3.fromRGB(255, 100, 0)
+button.BorderSizePixel = 0
+button.Text = "📍"
+button.TextSize = 40
+button.TextColor3 = Color3.fromRGB(255, 255, 255)
+button.Font = Enum.Font.GothamBold
+button.Parent = screenGui
+
+-- Arredondar cantos
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0.5, 0)
+corner.Parent = button
+
+-- Variáveis para arrastar
+local dragging = false
+local dragInput
+local dragStart
+local startPos
+
+-- Funções de arrastar
+local function update(input)
+    local delta = input.Position - dragStart
+    button.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+end
+
+button.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = button.Position
+        
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
+end)
+
+button.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+        dragInput = input
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if input == dragInput and dragging then
+        update(input)
+    end
+end)
+
+-- Função de teleporte
+local function teleportToPosition()
+    local character = player.Character
+    if not character or not character:FindFirstChild("HumanoidRootPart") then
+        return false
+    end
+    
+    local targetPosition = Vector3.new(-445, -24, 11)
+    
+    -- Teleportar o jogador
+    character.HumanoidRootPart.CFrame = CFrame.new(targetPosition)
+    
+    return true
+end
+
+-- Evento de clique do botão
+button.MouseButton1Click:Connect(function()
+    local success = teleportToPosition()
+    
+    if success then
+        -- Feedback visual de sucesso
+        button.BackgroundColor3 = Color3.fromRGB(0, 255, 100)
+        
+        -- Efeito de pulso
+        local tweenInfo = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+        local goal = {Size = UDim2.new(0, 90, 0, 90)}
+        local tween = TweenService:Create(button, tweenInfo, goal)
+        tween:Play()
+        
+        tween.Completed:Connect(function()
+            local tweenBack = TweenService:Create(button, tweenInfo, {Size = UDim2.new(0, 80, 0, 80)})
+            tweenBack:Play()
+        end)
+        
+        wait(0.3)
+        button.BackgroundColor3 = Color3.fromRGB(255, 100, 0)
+    else
+        -- Feedback visual de erro
+        button.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
+        wait(0.3)
+        button.BackgroundColor3 = Color3.fromRGB(255, 100, 0)
+    end
+end)
+
+-- Efeito de brilho no botão
+local gradient = Instance.new("UIGradient")
+gradient.Color = ColorSequence.new{
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(200, 200, 200))
+}
+gradient.Rotation = 45
+gradient.Parent = button
