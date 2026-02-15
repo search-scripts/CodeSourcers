@@ -328,3 +328,220 @@ gradient.Color = ColorSequence.new{
 }
 gradient.Rotation = 45
 gradient.Parent = button
+
+
+-- BasePart
+-- Script para botão arrastável com teleporte alternado entre duas posições
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+-- Criar ScreenGui
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "TeleportToggleGui"
+screenGui.ResetOnSpawn = false
+screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+screenGui.Parent = playerGui
+
+-- Criar botão
+local button = Instance.new("TextButton")
+button.Name = "ToggleTeleportButton"
+button.Size = UDim2.new(0, 80, 0, 80)
+button.Position = UDim2.new(0.85, 0, 0.4, 0)
+button.BackgroundColor3 = Color3.fromRGB(138, 43, 226) -- Roxo
+button.BorderSizePixel = 0
+button.Text = "A"
+button.TextSize = 35
+button.TextColor3 = Color3.fromRGB(255, 255, 255)
+button.Font = Enum.Font.GothamBold
+button.Parent = screenGui
+
+-- Arredondar cantos
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0.5, 0)
+corner.Parent = button
+
+-- Label indicador
+local label = Instance.new("TextLabel")
+label.Name = "PositionLabel"
+label.Size = UDim2.new(0, 60, 0, 20)
+label.Position = UDim2.new(0.5, -30, 1, 5)
+label.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+label.BorderSizePixel = 0
+label.Text = "Pos A"
+label.TextSize = 12
+label.TextColor3 = Color3.fromRGB(255, 255, 255)
+label.Font = Enum.Font.Gotham
+label.Parent = button
+
+local labelCorner = Instance.new("UICorner")
+labelCorner.CornerRadius = UDim.new(0.3, 0)
+labelCorner.Parent = label
+
+-- Variáveis para arrastar
+local dragging = false
+local dragInput
+local dragStart
+local startPos
+
+-- Variável de controle de posição
+local isPositionA = true -- Começa na posição A
+
+-- Posições de teleporte (ATUALIZADAS)
+local POSITION_A = Vector3.new(-398, -275, 19)
+local POSITION_B = Vector3.new(-445, -21, 11)
+
+-- Criar base sólida transparente na Posição A
+local function createPlatform()
+    -- Verificar se já existe uma base
+    if workspace:FindFirstChild("TeleportPlatformA") then
+        return
+    end
+    
+    local platform = Instance.new("Part")
+    platform.Name = "TeleportPlatformA"
+    platform.Size = Vector3.new(300, 2, 300) -- 300x300 com altura de 2
+    platform.Position = Vector3.new(POSITION_A.X, POSITION_A.Y - 3, POSITION_A.Z) -- 3 studs abaixo da posição A
+    platform.Anchored = true
+    platform.CanCollide = true
+    platform.Material = Enum.Material.SmoothPlastic
+    platform.BrickColor = BrickColor.new("Deep blue")
+    platform.Transparency = 0.3 -- Um pouco transparente
+    platform.TopSurface = Enum.SurfaceType.Smooth
+    platform.BottomSurface = Enum.SurfaceType.Smooth
+    platform.Parent = workspace
+    
+    -- Adicionar brilho à plataforma
+    local surfaceLight = Instance.new("SurfaceLight")
+    surfaceLight.Face = Enum.NormalId.Top
+    surfaceLight.Brightness = 0.5
+    surfaceLight.Color = Color3.fromRGB(100, 150, 255)
+    surfaceLight.Range = 30
+    surfaceLight.Parent = platform
+    
+    -- Adicionar borda decorativa
+    local border = Instance.new("SelectionBox")
+    border.LineThickness = 0.05
+    border.Color3 = Color3.fromRGB(138, 43, 226)
+    border.Adornee = platform
+    border.Parent = platform
+end
+
+-- Criar a plataforma quando o script iniciar
+createPlatform()
+
+-- Funções de arrastar
+local function update(input)
+    local delta = input.Position - dragStart
+    button.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+end
+
+button.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = button.Position
+        
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
+end)
+
+button.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+        dragInput = input
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if input == dragInput and dragging then
+        update(input)
+    end
+end)
+
+-- Função de teleporte
+local function teleportToPosition(position)
+    local character = player.Character
+    if not character or not character:FindFirstChild("HumanoidRootPart") then
+        return false
+    end
+    
+    -- Teleportar o jogador
+    character.HumanoidRootPart.CFrame = CFrame.new(position)
+    
+    return true
+end
+
+-- Função para atualizar visual do botão
+local function updateButtonVisual()
+    if isPositionA then
+        button.Text = "A"
+        button.BackgroundColor3 = Color3.fromRGB(138, 43, 226) -- Roxo
+        label.Text = "Pos A"
+    else
+        button.Text = "B"
+        button.BackgroundColor3 = Color3.fromRGB(255, 20, 147) -- Rosa
+        label.Text = "Pos B"
+    end
+end
+
+-- Evento de clique do botão
+button.MouseButton1Click:Connect(function()
+    local targetPosition
+    
+    -- Determinar qual posição usar
+    if isPositionA then
+        targetPosition = POSITION_A
+    else
+        targetPosition = POSITION_B
+    end
+    
+    -- Tentar teleportar
+    local success = teleportToPosition(targetPosition)
+    
+    if success then
+        -- Alternar para a próxima posição
+        isPositionA = not isPositionA
+        
+        -- Feedback visual de sucesso
+        local originalColor = button.BackgroundColor3
+        button.BackgroundColor3 = Color3.fromRGB(0, 255, 100)
+        
+        -- Efeito de pulso
+        local tweenInfo = TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+        local goal = {Size = UDim2.new(0, 90, 0, 90)}
+        local tween = TweenService:Create(button, tweenInfo, goal)
+        tween:Play()
+        
+        tween.Completed:Connect(function()
+            local tweenBack = TweenService:Create(button, tweenInfo, {Size = UDim2.new(0, 80, 0, 80)})
+            tweenBack:Play()
+        end)
+        
+        wait(0.2)
+        
+        -- Atualizar visual para a próxima posição
+        updateButtonVisual()
+    else
+        -- Feedback visual de erro
+        button.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
+        wait(0.3)
+        updateButtonVisual()
+    end
+end)
+
+-- Efeito de brilho no botão
+local stroke = Instance.new("UIStroke")
+stroke.Color = Color3.fromRGB(255, 255, 255)
+stroke.Thickness = 2
+stroke.Transparency = 0.5
+stroke.Parent = button
+
+-- Inicializar visual
+updateButtonVisual()
