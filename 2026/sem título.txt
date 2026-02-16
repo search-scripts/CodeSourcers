@@ -283,7 +283,7 @@ local function teleportToPosition()
         return false
     end
     
-    local targetPosition = Vector3.new(-445, -24, 11)
+    local targetPosition = Vector3.new(-435, 63, -4)
     
     -- Teleportar o jogador
     character.HumanoidRootPart.CFrame = CFrame.new(targetPosition)
