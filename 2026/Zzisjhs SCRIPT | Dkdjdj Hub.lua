@@ -1,0 +1,2 @@
+-- Gostou do Script? Pesquise por mais Scripts no meu Site: https://ethus-scripts.vercel.app/
+loadstring(game:HttpGet("https://raw.githubusercontent.com/search-scripts/Globe/main/2026/Zzisjhs%20SCRIPT%20%7C%20Dkdjdj%20Hub.lua"))()
