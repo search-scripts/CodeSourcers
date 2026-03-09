@@ -1,2 +1,2 @@
 -- Gostou do Script? Pesquise por mais Scripts no meu Site: https://ethus-scripts.vercel.app/
-loadstring(game:HttpGet("https://pastefy.app/qkYtWwQ0/raw"))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/search-scripts/Globe/main/2026/Bizarre%20Lineage%20SCRIPT%20%7C%20Nameless%20Hub.lua"))()
