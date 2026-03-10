@@ -1,0 +1,2 @@
+-- Gostou do Script? Pesquise por mais Scripts no meu Site: https://ethus-scripts.vercel.app/
+loadstring(game:HttpGet("https://raw.githubusercontent.com/search-scripts/Globe/main/2026/Dead%20Rails%20%5BBeta%5D%20SCRIPT%20%7C%20Vylera%20Hub.lua"))()
