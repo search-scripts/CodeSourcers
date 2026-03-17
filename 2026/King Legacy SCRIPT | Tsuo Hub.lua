@@ -6,5 +6,5 @@ loadstring(game:HttpGet("https://api.jnkie.com/api/v1/luascripts/public/759168c5
 -- King Legacy | Tsuo Hub
 loadstring(game:HttpGet("https://credential-request.vercel.app/Hub/Universal/System.lua"))()({
     HubName = "Tsuo Hub",
-    Script = "https://pastefy.app/FQA7KnSH/raw"
+    Script = "https://pastefy.app/nfoK1Isp/raw"
 })
