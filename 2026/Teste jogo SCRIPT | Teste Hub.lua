@@ -1,2 +1,2 @@
 -- Gostou do Script? Pesquise por mais Scripts no meu Site: https://ethus-scripts.vercel.app/
-loadstring(game:HttpGet("https://pastefy.app/eRC7oAII/raw"))()
+loadstring(game:HttpGet("https://pastefy.app/5E3lYwof/raw"))()
