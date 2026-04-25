@@ -1,2 +1,2 @@
 -- Gostou do Script? Pesquise por mais Scripts no meu Site: https://ethus-scripts.vercel.app/
-loadstring(game:HttpGet("https://raw.githubusercontent.com/Bliqe/Upload/refs/heads/main/Games/DE/Aden.lua"))()
+loadstring(game:HttpGet("https://pastefy.app/bxPU8q1z/raw"))()
