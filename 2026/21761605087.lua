@@ -1,0 +1,2 @@
+-- Gostou do Script? Pesquise por mais Scripts no meu Site: https://ethus-scripts.vercel.app/
+loadstring(game:HttpGet("https://raw.githubusercontent.com/Bliqe/Upload/refs/heads/main/Games/RHT/64420211797.lua"))()
